@@ -1,6 +1,6 @@
 from flask import Flask, render_template
-
 import tmdb_client
+
 app = Flask(__name__)
 
 @app.route('/')
@@ -12,6 +12,10 @@ def homepage():
 def movie_details(movie_id):
     details = tmdb_client.get_single_movie(movie_id)
     return render_template("movie_details.html", movie=details)
+
+# add to favs
+# list favs
+# share favs with email
 
 @app.context_processor
 def utility_processor():

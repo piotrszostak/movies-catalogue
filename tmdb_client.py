@@ -22,4 +22,4 @@ def get_single_movie(movie_id):
     return response.json()
 
 def get_poster_url(poster_path, size="w342"):
-    return f"https://image.tmdb.org/t/p/{size}/{poster_path}"
+    return f"https://image.tmdb.org/t/p/{size}{poster_path}"
