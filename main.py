@@ -1,5 +1,14 @@
-from flask import Flask, render_template
+from datetime import date
+
+from flask import Flask, render_template, request
+from sqlalchemy.orm import sessionmaker
+
 import tmdb_client
+from models import Movie
+from db import engine
+
+Session = sessionmaker(bind=engine)
+session = Session()
 
 app = Flask(__name__)
 
@@ -13,8 +22,42 @@ def movie_details(movie_id):
     details = tmdb_client.get_single_movie(movie_id)
     return render_template("movie_details.html", movie=details)
 
+@app.route("/users/<user_id>")
+def user_movies(user_id):
+    response = {}
+    user_movies = session.query(Movie).filter_by(user_id=user_id)   
+    # TODO change to list comprehension 
+    movie_list = []
+    for movie in user_movies:
+        dictionary = {
+            "id": movie.id,
+            "title": movie.title,
+            "director": movie.director
+        }
+        movie_list.append(dictionary)
+    
+    response[user_id] = movie_list
+    return response
+
+
+@app.route("/movies", methods=["POST"])
+def create_movie():
+    # TODO marshmallow serializer(verify input data)
+    input_dict = request.get_json()
+    movie_instance = Movie(
+        title=input_dict["title"],
+        release_date=date.fromisoformat(input_dict["release_date"]), 
+        director=input_dict["director"],
+    )
+    #movie_instance > db
+    session.add(movie_instance)
+    session.commit()
+    session.close()
+    return input_dict, 201
+
 # add to favs
-# list favs
+def add_movie_to_favs(movie_id, user_id):
+    pass
 # share favs with email
 
 @app.context_processor
