@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 import tmdb_client
 from models import Movie
 from db import engine
+from utils import show_user_movies, serialize_movie
 
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -25,17 +26,7 @@ def movie_details(movie_id):
 @app.route("/users/<user_id>")
 def user_movies(user_id):
     response = {}
-    user_movies = session.query(Movie).filter_by(user_id=user_id)   
-    # TODO change to list comprehension 
-    movie_list = []
-    for movie in user_movies:
-        dictionary = {
-            "id": movie.id,
-            "title": movie.title,
-            "director": movie.director
-        }
-        movie_list.append(dictionary)
-    
+    movie_list = show_user_movies(user_id=user_id)
     response[user_id] = movie_list
     return response
 
@@ -52,12 +43,23 @@ def create_movie():
     #movie_instance > db
     session.add(movie_instance)
     session.commit()
+    response_data = serialize_movie(movie_instance)
     session.close()
-    return input_dict, 201
+    return response_data, 201
 
 # add to favs
-def add_movie_to_favs(movie_id, user_id):
-    pass
+@app.route("/favs", methods=["POST"])
+def add_movie_to_favs():
+    add_to_favs = request.get_json()
+    movie_id = add_to_favs["movie_id"]
+    favourite_movie = session.get(Movie, movie_id)
+    user_id = add_to_favs["user_id"]
+    favourite_movie.user_id = user_id
+    session.add(favourite_movie)
+    session.commit()
+    session.close()
+    movie_list = show_user_movies(user_id)
+    return movie_list, 200
 # share favs with email
 
 @app.context_processor
